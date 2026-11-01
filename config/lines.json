@@ -1,0 +1,37 @@
+{
+  "_说明": "臂每换一个 phase，语音模块说对应的一句。{object} 换成物体中文名。改台词只改这里。",
+  "objects": {
+    "medicine": "药盒",
+    "cup": "水杯",
+    "phone": "手机",
+    "snack": "零食",
+    "shake": "握手"
+  },
+  "refused": "现在还不行",
+  "phases": {
+    "waving": "你好呀，我是小思",
+    "to_station": "我回到原位了，需要什么就叫我",
+    "going": "好的，我去拿{object}，会慢慢来",
+    "grasping": "我要夹住它了",
+    "grasped": "拿到了，这就递给你",
+    "delivering": null,
+    "waiting_release": "拿稳了就说，小思松手",
+    "releasing": "好，我松开了",
+    "returning": "我回去啦，记得慢慢喝",
+    "done": "好啦，慢慢用～",
+    "stopped": "我停下了",
+    "failed": "这次没做好，",
+    "working": null,
+    "confirming": "要我去拿{object}吗？请看看旁边没有人，然后说：小思确定",
+    "expired": "没等到确定，我先不动，要的话再叫我",
+    "cancelled": "好，不拿了"
+  },
+  "object_phases": {
+    "shake": {
+      "confirming": "要和我握握手吗？请看看旁边没有人，然后说：小思确定",
+      "going": "好呀，我把手伸过来，会慢慢来",
+      "done": "很高兴认识您～",
+      "cancelled": "好，那下次再握"
+    }
+  }
+}

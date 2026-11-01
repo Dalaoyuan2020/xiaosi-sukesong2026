@@ -1,0 +1,9 @@
+# Orange Pi AIpro arm venv: Python packages besides the hightorque_robot wheel.
+# numpy<2 comes from the Panthera SDK requirements.txt; that forces pin 2.7 and opencv 4.11 (opencv 5 needs numpy>=2).
+# Lock: config/orangepi_requirements.txt (Python 3.11). For Python 3.10 install from this file instead.
+numpy>=1.19.0,<2.0
+pyyaml>=6.0
+pin>=2.6.0
+scipy>=1.9.0
+osqp>=1.1.0,<2.0
+opencv-python-headless==4.11.0.86

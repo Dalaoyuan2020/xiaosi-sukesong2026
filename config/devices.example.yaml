@@ -1,0 +1,22 @@
+# 设备清单。复制成 devices.yaml 再改（devices.yaml 不进仓库，每台机器一份）。
+# 代码只从这里读设备，不写死编号。相机名字和接口单一致。
+
+arm:
+  mode: fake        # fake = 假臂，开发用；real = 真臂，只在接臂的那台机器上用
+  serial: auto      # auto = 启动时扫描通信板；也可以写死，例如 /dev/ttyACM0（重插会变，不推荐）
+
+cameras:
+  # Linux 上用 /dev/v4l/by-id/ 下的路径，重插不变。查法：ls -l /dev/v4l/by-id/
+  # 相机名字和位置到现场定，下面两个是例子
+  top:
+    path: /dev/v4l/by-id/usb-XXXX-video-index0
+    width: 640
+    height: 480
+    fps: 30
+  wrist:
+    path: /dev/v4l/by-id/usb-YYYY-video-index0
+    width: 640
+    height: 480
+    fps: 30
+
+policy_server: "100.x.x.x:8080"   # 4080 的 Tailscale 地址，模型模式才用

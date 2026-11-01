@@ -1,0 +1,79 @@
+{
+  "_说明": "FAKE=1 tools/xiaosi_start.sh 用：每个动作都是假的（打印一行、等 6 秒算做完），臂不动。练语音、改页面用。",
+  "cup": {
+    "cmd": [
+      "bash",
+      "-c",
+      "echo \"假动作：$0（$1，臂不动）\"; sleep 6",
+      "cup",
+      "{model}"
+    ],
+    "models": {
+      "杯子 ACT · 10000 步": [
+        "杯子 ACT · 10000 步"
+      ],
+      "杯子 SmolVLA · 5000 步": [
+        "杯子 SmolVLA · 5000 步"
+      ]
+    },
+    "model": "杯子 ACT · 10000 步",
+    "cwd": ".",
+    "timeout_s": 30
+  },
+  "snack": {
+    "cmd": [
+      "bash",
+      "-c",
+      "echo \"假动作：$0（$1，臂不动）\"; sleep 6",
+      "snack",
+      "{model}"
+    ],
+    "models": {
+      "零食 ACT · 三样合训 · 12000 步": [
+        "零食 ACT · 三样合训 · 12000 步"
+      ],
+      "零食 SmolVLA · 三样合训 · 10000 步 · 拿薯片": [
+        "零食 SmolVLA · 三样合训 · 10000 步 · 拿薯片"
+      ],
+      "薯片 ACT · 单训 · 4000 步": [
+        "薯片 ACT · 单训 · 4000 步"
+      ],
+      "薯片 SmolVLA · 单训 · 4000 步": [
+        "薯片 SmolVLA · 单训 · 4000 步"
+      ]
+    },
+    "model": "零食 ACT · 三样合训 · 12000 步",
+    "cwd": ".",
+    "timeout_s": 30
+  },
+  "shake": {
+    "cmd": [
+      "bash",
+      "-c",
+      "echo \"假动作：$0（$1，臂不动）\"; sleep 6",
+      "shake",
+      "{model}"
+    ],
+    "models": {
+      "握手 ACT v3 · 20000 步": [
+        "握手 ACT v3 · 20000 步"
+      ],
+      "握手 ACT v3 · 10000 步": [
+        "握手 ACT v3 · 10000 步"
+      ]
+    },
+    "model": "握手 ACT v3 · 20000 步",
+    "cwd": ".",
+    "timeout_s": 30
+  },
+  "wave": {
+    "cmd": [
+      "bash",
+      "-c",
+      "echo \"假动作：$0（臂不动）\"; sleep 6",
+      "wave"
+    ],
+    "cwd": ".",
+    "timeout_s": 30
+  }
+}

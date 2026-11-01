@@ -1,0 +1,79 @@
+{
+  "_说明": "ARM_BACKEND=skills 时用。每个技能 = 一个独占串口的程序；cmd 为 null = 还没配置。cmd 里的 \"{model}\" 换成页面选中的模型（models 表），model 是默认。改完不用重启臂服务。",
+  "cup": {
+    "cmd": [
+      "tools/record_cup/run_cup_policy.sh",
+      "{model}",
+      "--seconds",
+      "40"
+    ],
+    "models": {
+      "杯子 ACT · 10000 步": [
+        "~/Documents/sukesong-2026/models/cup_act_b1_010000/pretrained_model"
+      ],
+      "杯子 SmolVLA · 5000 步": [
+        "~/Documents/sukesong-2026/models/cup_smolvla_b1_005000/pretrained_model"
+      ]
+    },
+    "model": "杯子 ACT · 10000 步",
+    "cwd": "~/Documents/sukesong-2026",
+    "timeout_s": 150
+  },
+  "snack": {
+    "cmd": [
+      "tools/record_cup/run_cup_policy.sh",
+      "{model}",
+      "--seconds",
+      "40"
+    ],
+    "models": {
+      "零食 ACT · 三样合训 · 12000 步": [
+        "~/Documents/sukesong-2026/models/snack_act_012000/pretrained_model"
+      ],
+      "零食 SmolVLA · 三样合训 · 10000 步 · 拿薯片": [
+        "~/Documents/sukesong-2026/models/snack_smolvla_010000/pretrained_model",
+        "--task",
+        "pick up the chips"
+      ],
+      "薯片 ACT · 单训 · 4000 步": [
+        "~/Documents/sukesong-2026/models/chips_act_004000/pretrained_model"
+      ],
+      "薯片 SmolVLA · 单训 · 4000 步": [
+        "~/Documents/sukesong-2026/models/chips_smolvla_004000/pretrained_model",
+        "--task",
+        "pick up the chips"
+      ]
+    },
+    "model": "零食 ACT · 三样合训 · 12000 步",
+    "cwd": "~/Documents/sukesong-2026",
+    "timeout_s": 150,
+    "_备注": "ACT 不听指令：用合训 ACT 时桌上只放一种零食。SmolVLA 靠 --task 分辨拿什么。模型用 cup_down.sh 下载：bash /tmp/cup_down.sh <模型目录名>"
+  },
+  "wave": {
+    "cmd": null
+  },
+  "wake": {
+    "cmd": null,
+    "_备注": "想让叫醒时臂抬一下，就填一个短回放命令；不填只出声和眼睛"
+  },
+  "shake": {
+    "cmd": [
+      "tools/skills/shake_model_lab.py",
+      "{model}"
+    ],
+    "models": {
+      "握手 ACT v3 · 20000 步": [
+        "--model",
+        "act_v3_020000"
+      ],
+      "握手 ACT v3 · 10000 步": [
+        "--model",
+        "act_v3_010000"
+      ]
+    },
+    "model": "握手 ACT v3 · 20000 步",
+    "cwd": "~/Documents/sukesong-2026",
+    "timeout_s": 200,
+    "_备注": "握手 ACT v3（上海场录的 47 条），在 model_lab 测试台（8790）里跑。换模型后要先对那个模型跑一次 --sim（--sim --model act_v3_010000）"
+  }
+}

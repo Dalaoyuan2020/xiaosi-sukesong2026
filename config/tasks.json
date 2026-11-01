@@ -1,0 +1,16 @@
+{
+  "_说明": "物体 → 示教姿态。姿态名对应 config/poses.json，用 arm_service/teach.py 现场拖臂存。物体名现场摆好后改。",
+  "velocity": 0.3,
+  "wave_velocity": 0.8,
+  "start": "起始",
+  "wave": {"a": "挥手1", "b": "挥手2", "station": "工位", "times": 3},
+  "objects": {
+    "medicine": {"name": "药盒", "aliases": ["药盒", "药"], "above": "药盒上方", "grasp": "药盒抓"},
+    "cup": {"name": "水杯", "aliases": ["水杯", "杯子", "水"], "above": "水杯上方", "grasp": "水杯抓"},
+    "phone": {"name": "手机", "aliases": ["手机"], "above": "手机上方", "grasp": "手机抓"},
+    "snack": {"name": "零食", "aliases": ["零食", "薯片", "饼干"], "above": "零食上方", "grasp": "零食抓"}
+  },
+  "places": {
+    "user": "递交"
+  }
+}
