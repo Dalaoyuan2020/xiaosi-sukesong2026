@@ -66,6 +66,11 @@ button.mini { font-size: 14px; font-weight: 600; padding: 5px 12px; margin-right
 #models label { display: flex; flex-direction: column; gap: 4px; font-weight: 700; }
 #models select { font: inherit; font-weight: 400; font-size: 15px; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--muted); background: var(--bg); color: var(--ink); max-width: 100%; }
 #models .note { font-size: 13px; color: var(--muted); }
+#models h4 { margin: 0; font-size: 13px; color: var(--muted); letter-spacing: .1em; font-weight: 600; }
+#models .sw { flex-direction: row; align-items: center; justify-content: space-between; font-weight: 600; }
+#models .sw input { width: 22px; height: 22px; accent-color: var(--go); }
+#models .sw small { display: block; font-weight: 400; font-size: 12px; color: var(--muted); }
+button.sending { opacity: .6; }
 #toast { position: fixed; left: 50%; top: 18px; transform: translateX(-50%); background: var(--panel); color: var(--ink);
   padding: 10px 18px; border-radius: 12px; font-size: 18px; opacity: 0; transition: opacity .2s; }
 #toast.show { opacity: .95; }
@@ -95,7 +100,7 @@ body.theme-c button { background: #e8d8c4; color: var(--ink); } body.theme-c but
 </head>
 <body>
 <div class="screen">
-  <div class="top"><b>小思</b><span><button id="b-models" class="mini" type="button" aria-expanded="false">模型</button><span id="dot" class="dot"></span><span id="conn">连接中…</span></span></div>
+  <div class="top"><b>小思</b><span><button id="b-models" class="mini" type="button" aria-expanded="false">设置</button><span id="dot" class="dot"></span><span id="conn">连接中…</span></span></div>
   <div class="stage">
     <svg id="eyes" class="idle" viewBox="0 0 400 220" role="img" aria-label="小思的眼睛">
       <g class="visor"><rect x="-30" y="-28" width="460" height="276" rx="70" fill="#e07a3c"/><rect x="0" y="-4" width="400" height="228" rx="52" fill="#1d1a17"/></g>
@@ -137,17 +142,22 @@ body.theme-c button { background: #e8d8c4; color: var(--ink); } body.theme-c but
   const DEMO = Q.get("demo");
 
   function toast(t) { const el = $("toast"); el.textContent = t; el.classList.add("show"); setTimeout(() => el.classList.remove("show"), 1800); }
+  function press(id, path, body) {                       // 动作按钮：按下就变灰，回话了再恢复，防连点
+    const b = $(id); if (b.classList.contains("sending")) return;
+    b.classList.add("sending");
+    post(path, body).finally(() => b.classList.remove("sending"));
+  }
   function post(path, body) {
     return fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body || {}) })
       .then((r) => r.json()).then((j) => { if (!j.ok) toast(j.error || "现在还不行"); return j; })
-      .catch(() => toast("连不上机械臂服务"));
+      .catch(() => toast("连不上臂服务：看看终端里 tools/xiaosi_start.sh 还在不在跑"));
   }
   // 先问再做：按钮和语音一样，先发请求，等「确定」才动臂
-  $("b-cup").onclick = () => post("request", { action: "pick", object: "cup" });
-  $("b-snack").onclick = () => post("request", { action: "pick", object: "snack" });
-  $("b-shake").onclick = () => post("request", { action: "shake" });
-  $("b-yes").onclick = () => post("confirm");
-  $("b-no").onclick = () => post("cancel");
+  $("b-cup").onclick = () => press("b-cup", "request", { action: "pick", object: "cup" });
+  $("b-snack").onclick = () => press("b-snack", "request", { action: "pick", object: "snack" });
+  $("b-shake").onclick = () => press("b-shake", "request", { action: "shake" });
+  $("b-yes").onclick = () => press("b-yes", "confirm");
+  $("b-no").onclick = () => press("b-no", "cancel");
   $("b-stop").onclick = () => post("stop");
   $("b-release").onclick = () => post("release");
   document.addEventListener("keydown", (e) => { if (e.key === "Escape" || e.key === " ") post("stop"); });
@@ -159,11 +169,28 @@ body.theme-c button { background: #e8d8c4; color: var(--ink); } body.theme-c but
   }
   // 模型面板：GET /models 列出每个动作能选的模型；选了就 POST /model。没下载的选不了；干活时不让换。
   const SKILL_NAME = { cup: "递杯子", snack: "拿零食", shake: "握手" };
+  const FEATURE_NAME = { wake_gesture: ["叫醒点头", "叫「小思小思」时臂点一下头（臂没电时关掉）"],
+                         eyes_follow: ["眼睛跟人", "屏幕上的眼睛跟着摄像头里的人转"],
+                         chat: ["自由聊天", "叫醒后可以随便说一句（要 MiMo key）"] };
+  function renderFeatures(box, f) {
+    const h = document.createElement("h4"); h.textContent = "功能开关"; box.append(h);
+    for (const [k, [name, tip]] of Object.entries(FEATURE_NAME)) {
+      if (!(k in f)) continue;
+      const lab = document.createElement("label"); lab.className = "sw";
+      const t = document.createElement("span"); t.textContent = name;
+      const sm = document.createElement("small"); sm.textContent = tip; t.append(sm);
+      const cb = document.createElement("input"); cb.type = "checkbox"; cb.id = "feat-" + k; cb.checked = !!f[k];
+      cb.onchange = () => post("feature", { name: k, on: cb.checked }).then((r) => { if (r && r.ok) toast(name + (cb.checked ? "：开" : "：关")); else cb.checked = !cb.checked; });
+      lab.append(t, cb); box.append(lab);
+    }
+  }
   function renderModels() {
-    fetch("models").then((r) => r.json()).then((j) => {
+    Promise.all([fetch("features").then((r) => r.json()).catch(() => ({})), fetch("models").then((r) => r.json())]).then(([fj, j]) => {
       const box = $("models"); box.replaceChildren();
+      if (fj && fj.features) renderFeatures(box, fj.features);
+      const mh = document.createElement("h4"); mh.textContent = "每个动作用哪个模型"; box.append(mh);
       const sk = j.skills || {};
-      if (!Object.keys(sk).length) { box.textContent = "现在的后端不能换模型（要 ARM_BACKEND=skills）"; return; }
+      if (!Object.keys(sk).length) { const n0 = document.createElement("div"); n0.className = "note"; n0.textContent = "现在的后端不能换模型（要 ARM_BACKEND=skills）"; box.append(n0); return; }
       for (const [name, info] of Object.entries(sk)) {
         const lab = document.createElement("label"); lab.textContent = SKILL_NAME[name] || name;
         const sel = document.createElement("select"); sel.id = "model-" + name; sel.disabled = !!j.busy;
@@ -295,7 +322,7 @@ body.theme-c button { background: #e8d8c4; color: var(--ink); } body.theme-c but
   }
   function poll() {
     fetch("state").then((r) => r.json()).then(view)
-      .catch(() => { $("conn").textContent = "臂服务没开"; $("dot").className = "dot off"; })
+      .catch(() => { $("conn").textContent = "连不上臂服务（tools/xiaosi_start.sh 开着吗？）"; $("dot").className = "dot off"; })
       .finally(() => setTimeout(poll, 300));
   }
   poll();

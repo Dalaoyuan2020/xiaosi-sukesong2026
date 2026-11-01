@@ -17,6 +17,7 @@ class SkillsTest(unittest.TestCase):
         cfg = {"ok": {"cmd": ["bash", "-c", "echo hi; sleep 2.5"], "cwd": self.tmp.name, "timeout_s": 20},
                "bad": {"cmd": ["bash", "-c", "exit 3"], "cwd": self.tmp.name},
                "said": {"cmd": ["bash", "-c", "echo 小思说：我先不伸手。; exit 1"], "cwd": self.tmp.name},
+               "wake": {"cmd": ["bash", "-c", "echo 小思说：机械臂没回话; exit 1"], "cwd": self.tmp.name},
                "pickm": {"cmd": ["bash", "-c", "echo \"用 $0 $1\"", "{model}", "--seconds"], "cwd": self.tmp.name,
                          "models": {"甲": ["a.pt"], "乙": ["b.pt", "--task", "x"]}, "model": "甲"},
                "long": {"cmd": ["bash", "-c", "trap 'exit 0' INT; sleep 30 & wait"], "cwd": self.tmp.name},
@@ -92,6 +93,14 @@ class SkillsTest(unittest.TestCase):
         self.assertTrue(self.wait_for("done"))
         log = sorted(pathlib.Path(self.tmp.name).glob("pickm_*.log"))[-1].read_text()
         self.assertIn("用 b.pt --task", log)
+
+    def test_wake_failure_is_quiet(self):
+        self.r.start("wake")
+        self.assertTrue(self.wait_for("idle", 10))
+        self.assertNotIn("failed", self.phases)
+        self.assertEqual(self.phases[0], "waking")
+        self.assertEqual(self.phases[-1], "idle")
+        self.assertIn("叫醒动作没做成", self.results[-1])
 
     def test_stop(self):
         self.r.start("long")

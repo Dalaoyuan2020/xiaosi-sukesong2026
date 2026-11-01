@@ -35,6 +35,8 @@ def main():
     ap.add_argument("--show", action="store_true")
     ap.add_argument("--gain", type=float, default=1.3, help="眼睛转动幅度：人在画面边上时眼睛看到多偏")
     ap.add_argument("--offset-x", type=float, default=0.0, help="摄像头不在屏幕正中时的左右补偿（-1..1）")
+    ap.add_argument("--offset-y", type=float, default=0.0, help="上下补偿：人坐得比摄像头低时脸总在画面下半，给负数把眼睛抬回来")
+    ap.add_argument("--gain-y", type=float, default=0.6, help="眼睛上下转动幅度（比左右小，看着更自然）")
     ap.add_argument("--calibrate", action="store_true", help="每次检测打印 x，用来对方向")
     a = ap.parse_args()
 
@@ -89,6 +91,7 @@ def main():
             if not a.no_mirror:
                 cx = -cx
             cx = max(-1.0, min(1.0, (cx + a.offset_x) * a.gain))
+            cy = max(-1.0, min(1.0, (cy + a.offset_y) * a.gain_y))
             sx, sy = 0.6 * sx + 0.4 * cx, 0.6 * sy + 0.4 * cy           # 平滑，眼睛不抖
             body = {"found": True, "x": round(sx, 3), "y": round(sy, 3)}
             last_found = time.time()

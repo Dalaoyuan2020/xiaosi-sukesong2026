@@ -32,6 +32,7 @@ TASKS = json.loads((ROOT / "config" / "tasks.json").read_text())
 # 控臂后端：twin = 走 5050 数字孪生 + 示教姿态（原来的做法）；
 #          skills = 每个动作是一个独占串口的外部程序（模型推理 / 轨迹回放），表在 config/skills.json
 BACKEND = os.environ.get("ARM_BACKEND", "twin")
+FEATURES_FILE = pathlib.Path(os.environ.get("XIAOSI_FEATURES", ROOT / "logs" / "features.json"))   # 页面上的功能开关
 
 
 def load_poses():
@@ -61,7 +62,30 @@ class Arm:
                    "pending": None}       # 等确认的动作 {"action","object","expires"}：先确认再执行（安全）
         self.runner = skills.Runner(self.set_phase)
 
+    FEATURES = {"wake_gesture": True, "eyes_follow": True, "chat": True}   # 默认都开
+
+    def features(self):
+        f = dict(self.FEATURES)
+        try:
+            f.update({k: bool(v) for k, v in json.loads(FEATURES_FILE.read_text()).items() if k in f})
+        except Exception:
+            pass
+        return f
+
+    def set_feature(self, name, on):
+        if name not in self.FEATURES:
+            return False, f"没有「{name}」这个开关"
+        f = self.features()
+        f[name] = bool(on)
+        FEATURES_FILE.parent.mkdir(parents=True, exist_ok=True)
+        FEATURES_FILE.write_text(json.dumps(f, ensure_ascii=False))
+        if name == "eyes_follow" and not on:
+            self.set_look({"found": False})
+        return True, f
+
     def set_look(self, body):
+        if body.get("found") and not self.features()["eyes_follow"]:
+            body = {"found": False}                      # 关了「眼睛跟人」：人脸位置不往页面传
         with self.lock:
             self.st["look"] = {"found": bool(body.get("found")), "x": float(body.get("x", 0.0)),
                                "y": float(body.get("y", 0.0)), "t": time.time()}
@@ -91,7 +115,7 @@ class Arm:
             connected, fake = len(glob.glob("/dev/cu.usbmodem2024051701*")) == 7, False   # 臂控制板 7 个串口
             with self.lock:
                 return dict(self.st, busy=self.runner.busy(), connected=connected,
-                            mode="fake" if skills.FAKE else "real")
+                            mode="fake" if skills.FAKE else "real", features=self.features())
         try:
             s = twin.status()
             connected, fake = True, bool(s.get("fake"))
@@ -153,7 +177,7 @@ class Arm:
 
     def wake(self):
         """「小思小思」：页面和语音负责醒来；配置了 wake 技能（比如抬一下臂）才动臂。"""
-        if BACKEND == "skills" and skills.configured("wake"):
+        if BACKEND == "skills" and skills.configured("wake") and self.features()["wake_gesture"]:
             return self.run_skill("wake")
         return True, "awake"
 
@@ -331,6 +355,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, ARM.state())
         if self.path.split("?")[0] in ("/", "/xiaosi", "/ui"):   # 小思页面（?theme=a|b|c 选方案）
             return self._file(UI_DIR / "xiaosi.html", "text/html; charset=utf-8")
+        if self.path == "/features":                     # 功能开关：叫醒点头 / 眼睛跟人 / 自由聊天
+            return self._send(200, {"ok": True, "features": ARM.features()})
         if self.path == "/models":                       # 每个动作能选哪些模型、现在用哪个（skills 后端）
             return self._send(200, {"ok": True, "skills": skills.model_list(), "busy": ARM.runner.busy()})
         if self.path == "/lines":
@@ -365,6 +391,9 @@ class Handler(BaseHTTPRequestHandler):
             ARM.set_heard(body.get("text", "小思小思"))
             ok, info = ARM.wake()
             return self._send(200 if ok else 409, {"ok": ok, "info": info} if ok else {"ok": False, "error": info})
+        if self.path == "/feature":                       # 页面开关：{"name": "chat", "on": false}
+            ok, info = ARM.set_feature(body.get("name", ""), body.get("on"))
+            return self._send(200 if ok else 400, {"ok": ok, "features": info} if ok else {"ok": False, "error": info})
         if self.path == "/model":                         # 页面换模型：{"skill": "cup", "model": "..."}；干活时不许换
             if ARM.runner.busy():
                 return self._send(409, {"ok": False, "error": "正在干活，做完再换"})

@@ -168,6 +168,15 @@ def record_utterance(q, max_s=6.0, wait_s=4.0, tail_s=0.8):
     return np.concatenate(buf) if buf else None
 
 
+def feature_on(name):
+    """页面上的功能开关（臂服务 /features）；问不到就当开着。"""
+    try:
+        with urllib.request.urlopen(ARM_URL + "/features", timeout=1) as r:
+            return bool(json.loads(r.read()).get("features", {}).get(name, True))
+    except Exception:
+        return True
+
+
 def on_utterance(wav, dry=False):
     """一句话（wav 字节）→ 听写 → 命令就走口令，不是命令就聊天。聊天只说话、上字幕，不调任何动臂的接口。"""
     try:
@@ -285,7 +294,7 @@ def run_mic(dry=False, use_chat=True):
             if r:
                 spotter.reset_stream(s)
                 on_keyword(r, dry)
-                if CHAT and r in WAKE_WORDS:              # 叫醒后听一句自由的话
+                if CHAT and r in WAKE_WORDS and feature_on("chat"):   # 叫醒后听一句自由的话（页面能关）
                     audio = record_utterance(q)
                     if audio is not None:
                         threading.Thread(target=on_utterance, args=(_wav_bytes(audio), dry), daemon=True).start()

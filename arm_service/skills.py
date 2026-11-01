@@ -124,6 +124,9 @@ def _expand(name, spec):
     return [x for c in cmd for x in (args if c == "{model}" else [c])]
 
 
+QUIET_SKILLS = {"wake"}      # 锦上添花的动作（叫醒点头）：不播台词，做不成也不报失败
+
+
 def configured(name):
     s = load().get(name)
     return bool(s and s.get("cmd"))
@@ -164,27 +167,29 @@ class Runner:
         return True, str(self.proc.pid)
 
     def _watch(self, name, object_name, log, timeout_s):
-        self.on_phase("going", object=object_name, skill=name, model=self.model, last_result="")
+        quiet = name in QUIET_SKILLS
+        self.on_phase("waking" if quiet else "going", object=object_name, skill=name, model=self.model, last_result="")
         time.sleep(2.0)
-        if self.proc.poll() is None:
+        if self.proc.poll() is None and not quiet:
             self.on_phase("working")
         try:
             rc = self.proc.wait(timeout=timeout_s)
         except subprocess.TimeoutExpired:
             self.stop()
             rc = self.proc.wait()
-            self.on_phase("failed", last_result=f"超过 {timeout_s:.0f} 秒没做完")
+            self.on_phase("idle" if quiet else "failed", last_result=f"超过 {timeout_s:.0f} 秒没做完")
             log.close()
             return
         log.close()
         if self.stopping:
             self.on_phase("stopped", last_result="stopped")
         elif rc == 0:
-            self.on_phase("done", last_result="ok")
+            self.on_phase("idle" if quiet else "done", last_result="ok")
         else:
             said = [l.split("小思说：", 1)[1].strip() for l in open(log.name, encoding="utf-8", errors="replace")
                     if l.startswith("小思说：")]      # 技能自己给的、能念给人听的原因
-            self.on_phase("failed", last_result=said[-1] if said else f"程序退出码 {rc}，看 logs/skills")
+            why = said[-1] if said else f"程序退出码 {rc}，看 logs/skills"
+            self.on_phase("idle" if quiet else "failed", last_result=("叫醒动作没做成：" if quiet else "") + why)
 
     def busy(self):
         return self.proc is not None and self.proc.poll() is None
